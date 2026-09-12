@@ -3,8 +3,8 @@
   if (!cfg) throw new Error("FORM_CONFIG is missing");
 
   const $ = (id) => document.getElementById(id);
-  const rupiah = (value) => "Rp " + Number(value).toLocaleString("id-ID");
-  const slugify = (value) => value.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+  const rupiah = (value) => "Rp" + Number(value).toLocaleString("id-ID");
+  const slugify = (value) => value.toLowerCase().trim().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
   const validHex = (value) => /^#[0-9A-F]{6}$/i.test(value);
 
   function rgb(hex) {
@@ -172,7 +172,7 @@
     const body = document.createElement("div");
     body.className = "exhibit-body row2";
     section.fields.forEach((field) => {
-      const optional = true;
+      const optional = field.key.includes("reply_username");
       const label = document.createElement("label");
       label.className = "field" + (field.long ? " long" : "");
       const labelText = document.createElement("span");
@@ -266,7 +266,7 @@
       lines.push(String(index + 2).padStart(2, "0") + " · " + section.title);
       section.fields.forEach((field) => {
         const value = $("field_" + field.key).value.trim();
-        lines.push(field.label + " → " + (value || "(pakai default katalog: " + field.placeholder.replace(/\n/g, " ") + ")"));
+        lines.push(field.label + " → " + (value || "(pakai default katalog)"));
       });
       lines.push("");
     });
@@ -304,29 +304,31 @@
     return copied;
   }
 
-  $("orderForm").addEventListener("submit", async (event) => {
+    $("orderForm").addEventListener("submit", (event) => {
     event.preventDefault();
     if (!validate()) return;
     const text = buildOrderText();
     $("outputText").textContent = text;
     $("outputCard").hidden = false;
+    $("sendStatus").textContent = "siap disalin";
+    $("resultMessage").textContent = "Silakan klik tombol 'Salin Form' di bawah, lalu kirimkan ke kontak Telegram.";
     $("outputCard").scrollIntoView({ behavior: "smooth", block: "start" });
-
-    const chatWindow = window.open("https://t.me/mirssy", "_blank");
-    if (chatWindow) chatWindow.opener = null;
-    const copied = await copyText(text);
-    $("sendStatus").textContent = copied ? "siap dikirim ✓" : "salin manual";
-    if (copied && chatWindow) {
-      $("resultMessage").textContent = "teks pesanan sudah tersalin. chat @mirssy terbuka — tinggal paste dan lampirkan media.";
-    } else if (copied) {
-      $("resultMessage").textContent = "teks sudah tersalin, tetapi popup diblokir. tekan tombol buka t.me/mirssy.";
-    } else {
-      $("resultMessage").textContent = "clipboard diblokir browser. tekan salin teks lagi atau salin ringkasan secara manual.";
-    }
   });
 
   $("copyButton").addEventListener("click", async () => {
-    const copied = await copyText($("outputText").textContent);
-    $("resultMessage").textContent = copied ? "teks berhasil disalin ulang ♡" : "clipboard masih diblokir; pilih ringkasan lalu salin manual.";
+    const text = $("outputText").textContent;
+    const copied = await copyText(text);
+    if (copied) {
+      $("sendStatus").textContent = "tersalin ✓";
+      $("resultMessage").textContent = "✓ Form berhasil disalin ke clipboard! Silakan klik tombol di bawah untuk langsung menuju ke chat Telegram.";
+      const origText = $("copyButton").textContent;
+      $("copyButton").textContent = "tersalin ✓";
+      setTimeout(() => {
+        $("copyButton").textContent = origText;
+      }, 2500);
+    } else {
+      $("sendStatus").textContent = "salin manual";
+      $("resultMessage").textContent = "Clipboard tidak dapat diakses otomatis. Silakan pilih dan salin teks di dalam kotak secara manual.";
+    }
   });
 })();
