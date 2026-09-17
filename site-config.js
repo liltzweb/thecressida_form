@@ -10,7 +10,6 @@
   "price": 15000,
   "rushPrice": 4000,
   "recolorPrice": 2000,
-  "decorationPrice": 3000,
   "palette": [
     "#000000",
     "#FFFF00",
